@@ -1,6 +1,6 @@
 /*!
  * Fortune.js
- * Version 5.0.3
+ * Version 5.0.4
  * MIT License
  * http://fortune.js.org
  */
@@ -1351,10 +1351,16 @@ module.exports = message
  * @return {String}
  */
 function message (id, language, data) {
-  var str, key
+  var str, key, subtag
 
   if (!language || !message.hasOwnProperty(language))
-    language = message.defaultLanguage
+    subtag = language.match(/.+?(?=-)/)
+    if (subtag) {
+      subtag = subtag[0]
+      if (message.hasOwnProperty(subtag)) language = subtag
+      else language = message.defaultLanguage
+    }
+    else language = message.defaultLanguage
 
   if (!message[language].hasOwnProperty(id))
     return message[language][genericMessage] || message.en[genericMessage]
