@@ -1,6 +1,6 @@
 /*!
  * Fortune.js
- * Version 5.0.5
+ * Version 5.0.6
  * MIT License
  * http://fortune.js.org
  */
@@ -1251,7 +1251,7 @@ function deepEqual (a, b) {
 module.exports = deepEqual
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")})
-},{"../../node_modules/is-buffer/index.js":50}],20:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":49}],20:[function(require,module,exports){
 'use strict'
 
 var responseClass = require('./response_classes')
@@ -1353,13 +1353,10 @@ module.exports = message
 function message (id, language, data) {
   var str, key, subtag
 
-  if (!language || !message.hasOwnProperty(language)) {
-    subtag = language.match(/.+?(?=-)/)
-    if (subtag) {
-      subtag = subtag[0]
-      if (message.hasOwnProperty(subtag)) language = subtag
-      else language = message.defaultLanguage
-    }
+  if (!message.hasOwnProperty(language)) {
+    subtag = language && language.match(/.+?(?=-)/)
+    if (subtag) subtag = subtag[0]
+    if (message.hasOwnProperty(subtag)) language = subtag
     else language = message.defaultLanguage
   }
 
@@ -1494,7 +1491,7 @@ function successClass (name) {
     'assign(this, x) }')(assign)
 }
 
-},{"./assign":14,"error-class":47}],28:[function(require,module,exports){
+},{"./assign":14,"error-class":46}],28:[function(require,module,exports){
 'use strict'
 
 var responseClass = require('./response_classes')
@@ -3462,7 +3459,7 @@ function bindMiddleware (scope, method) {
 
 module.exports = Fortune
 
-},{"./adapter":4,"./adapter/adapters/memory":3,"./adapter/singleton":5,"./common":23,"./dispatch":35,"./record_type/ensure_types":42,"./record_type/validate":43,"event-lite":48}],41:[function(require,module,exports){
+},{"./adapter":4,"./adapter/adapters/memory":3,"./adapter/singleton":5,"./common":23,"./dispatch":35,"./record_type/ensure_types":42,"./record_type/validate":43,"event-lite":47}],41:[function(require,module,exports){
 (function (Buffer){
 'use strict'
 
@@ -5723,14 +5720,7 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":44,"ieee754":49,"isarray":46}],46:[function(require,module,exports){
-var toString = {}.toString;
-
-module.exports = Array.isArray || function (arr) {
-  return toString.call(arr) == '[object Array]';
-};
-
-},{}],47:[function(require,module,exports){
+},{"base64-js":44,"ieee754":48,"isarray":50}],46:[function(require,module,exports){
 'use strict'
 
 var hasCaptureStackTrace = 'captureStackTrace' in Error
@@ -5789,7 +5779,7 @@ function nonEnumerableProperty (value) {
   }
 }
 
-},{}],48:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /**
  * event-lite.js - Light-weight EventEmitter (less than 1KB when gzipped)
  *
@@ -5971,7 +5961,7 @@ function EventLite() {
 
 })(EventLite);
 
-},{}],49:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -6057,7 +6047,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],50:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -6079,5 +6069,12 @@ function isBuffer (obj) {
 function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
+
+},{}],50:[function(require,module,exports){
+var toString = {}.toString;
+
+module.exports = Array.isArray || function (arr) {
+  return toString.call(arr) == '[object Array]';
+};
 
 },{}]},{},[39]);
