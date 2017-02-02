@@ -1,6 +1,6 @@
 /*!
  * Fortune.js
- * Version 5.0.6
+ * Version 5.1.0
  * MIT License
  * http://fortune.js.org
  */
@@ -47,28 +47,22 @@ exports.generateId = generateId
 
 
 exports.applyOptions = function (fields, records, options, meta) {
-  var count, record, field, isInclude, isExclude, language, memoizedRecords,
-    range, match, exists
+  var count, record, field, isInclude, isExclude, language, memoizedRecords
   var i, j
 
   if (!options) options = {}
   if (!meta) meta = {}
 
   language = meta.language
-  range = options.range
-  match = options.match
-  exists = options.exists
 
   // Apply filters.
-  if (range || match || exists) {
+  if (options) {
     memoizedRecords = records
     records = []
     for (i = 0, j = memoizedRecords.length; i < j; i++) {
       record = memoizedRecords[i]
-      if (range && !matchByRange(fields, range, record)) continue
-      if (match && !matchByField(fields, match, record)) continue
-      if (exists && !matchByExistence(fields, exists, record)) continue
-      records.push(record)
+      if (match(fields, options, record))
+        records.push(record)
     }
   }
 
@@ -132,6 +126,52 @@ function checkValue (fieldDefinition, a) {
   }
 }
 
+function match (fields, options, record) {
+  var key
+
+  for (key in options)
+    switch (key) {
+    case 'and':
+      if (!matchByLogicalAnd(fields, options[key], record)) return false
+      break
+    case 'or':
+      if (!matchByLogicalOr(fields, options[key], record)) return false
+      break
+    case 'not':
+      if (match(fields, options[key], record)) return false
+      break
+    case 'range':
+      if (!matchByRange(fields, options[key], record)) return false
+      break
+    case 'match':
+      if (!matchByField(fields, options[key], record)) return false
+      break
+    case 'exists':
+      if (!matchByExistence(fields, options[key], record)) return false
+      break
+    default:
+    }
+
+  return true
+}
+
+function matchByLogicalAnd (fields, clauses, record) {
+  var i
+
+  for (i = 0; i < clauses.length; i++)
+    if (!match(fields, clauses[i], record)) return false
+
+  return true
+}
+
+function matchByLogicalOr (fields, clauses, record) {
+  var i
+
+  for (i = 0; i < clauses.length; i++)
+    if (match(fields, clauses[i], record)) return true
+
+  return false
+}
 
 function matchByField (fields, match, record) {
   var field, matches
@@ -336,7 +376,7 @@ module.exports = function (Adapter) {
       this.options.recordsPerType = 1000
   }
 
-  MemoryAdapter.prototype = Object.create(Adapter.prototype)
+  MemoryAdapter.prototype = new Adapter()
 
   MemoryAdapter.prototype.connect = function () {
     var recordTypes = this.recordTypes
@@ -494,6 +534,11 @@ module.exports = function (Adapter) {
   // Expose utility functions.
   MemoryAdapter.common = common
 
+  // Expose features.
+  MemoryAdapter.features = {
+    logicalOperators: true
+  }
+
   return MemoryAdapter
 }
 
@@ -531,6 +576,12 @@ function Adapter (properties) {
  * - `message`: a function with the signature (`id`, `language`, `data`).
  *
  * These keys are accessible on the instance (`this`).
+ *
+ * An adapter may expose a `features` static property, which is an object
+ * that can contain boolean flags. These are used mainly for checking which
+ * additional features may be tested.
+ *
+ * - `logicalOperators`: whether or not `and` and `or` queries are supported.
  */
 Adapter.prototype.constructor = function () {
   // This exists here only for documentation purposes.
@@ -604,6 +655,12 @@ Adapter.prototype.create = function () {
  *
  *   // Offset results by this much from the beginning.
  *   offset: 0,
+ *
+ *   // The logical operator "and", may be nested. Optional feature.
+ *   and: { ... },
+ *
+ *   // The logical operator "or", may be nested. Optional feature.
+ *   or: { ... },
  *
  *   // Reserved field for custom querying.
  *   query: null
@@ -786,6 +843,8 @@ Adapter.prototype.applyOperators = function (record) {
 // Expose the default adapter.
 Adapter.DefaultAdapter = memoryAdapter(Adapter)
 
+// Expose features object.
+Adapter.features = {}
 
 module.exports = Adapter
 
@@ -820,6 +879,7 @@ function AdapterSingleton (properties) {
   return new CustomAdapter({
     options: input[1] || {},
     recordTypes: properties.recordTypes,
+    features: CustomAdapter.features,
     common: common,
     errors: errors,
     keys: keys,
@@ -3018,7 +3078,7 @@ Fortune.prototype = new EventLite()
  *
  * ```js
  * function Integer (x) { return (x | 0) === x }
- * Integer.prototype = Number
+ * Integer.prototype = new Number()
  * ```
  *
  * The options object may contain the following keys:
